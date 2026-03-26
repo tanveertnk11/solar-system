@@ -1,0 +1,29 @@
+name: Solar System Workflow
+
+on:
+  push:
+    branches:
+      - "main*"
+      - "feature/*"
+  workflow_dispatch:
+
+env:
+  MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
+  MONGO_PASSWORD: ${{ vars.MONGO_PASSWORD }}
+  MONGO_URI: ${{ secrets.MONGO_URI }}
+
+jobs:
+  unit-testing:
+    name: Unit Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+      - name: Install nodejs
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+      - name: Install dependencies
+        run: npm install
+      - name: Run unit tests
+        run: npm test
