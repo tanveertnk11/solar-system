@@ -26,4 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run unit tests
-        run: npm test
+        run: |
+          echo ${{env.MONGO_PASSWORD}}
+          echo ${{env.MONGO_URI}}
+          echo ${{env.MONGO_USERNAME}}
+          npm test
