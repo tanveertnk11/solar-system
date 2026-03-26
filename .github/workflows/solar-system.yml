@@ -9,8 +9,8 @@ on:
 
 env:
   MONGO_USERNAME: ${{ vars.MONGO_USERNAME }}
-  MONGO_PASSWORD: ${{ vars.MONGO_PASSWORD }}
-  MONGO_URI: ${{ secrets.MONGO_URI }}
+  MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+  MONGO_URI: ${{ vars.MONGO_URI }}
 
 jobs:
   unit-testing:
