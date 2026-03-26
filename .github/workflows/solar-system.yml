@@ -26,8 +26,31 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run unit tests
-        run: |
-          echo ${{env.MONGO_PASSWORD}}
-          echo ${{env.MONGO_URI}}
-          echo ${{env.MONGO_USERNAME}}
-          npm test
+        if: always()
+        run: npm test
+      - name: Artifact the Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test results
+          path: test-results.xml
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+      - name: Install nodejs
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+      - name: Install dependencies
+        run: npm install
+      - name: Run Code Coverage
+        continue-on-error: true
+        run: npm run coverage
+      - name: Artifact the code coverage directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: Coverage
+          path: coverage
+          retention-days: 5
