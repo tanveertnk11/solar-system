@@ -1,8 +1,11 @@
 {
   "name": "Solar System",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tanveertnk11/solar-system.git"
+  },
   "version": "6.7.6",
-  "author": "Siddharth Barahalikar <barahalikar.siddharth@gmail.com>",
-  "homepage": "https://www.linkedin.com/in/barahalikar-siddharth/",
+  "author": "Tanveer <tanysingh09@gmail.com>",
   "license": "MIT",
   "scripts": {
     "start": "node app.js",
