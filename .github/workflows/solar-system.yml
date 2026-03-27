@@ -43,6 +43,8 @@ jobs:
           key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         run: npm install
+      - name: Initialise seed data
+        run: node seed.js
       - name: Run unit tests
         if: always()
         run: npm test
@@ -79,6 +81,8 @@ jobs:
           key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         run: npm install
+      - name: Initialise seed data
+        run: node seed.js
       - name: Run Code Coverage
         continue-on-error: true
         run: npm run coverage
