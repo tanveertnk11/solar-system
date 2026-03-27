@@ -94,7 +94,7 @@ jobs:
           ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
 
           echo "Testing /live endpoint"
-          wget -q -O http://127.0.0.1:3000/live | grep live
+          wget -q -O - http://127.0.0.1:3000/live | grep live
       - name: Push the docker image
         uses: docker/build-push-action@v7
         with:
