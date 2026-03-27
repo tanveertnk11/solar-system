@@ -83,7 +83,7 @@ jobs:
           push: false
           context: .
           load: true
-          tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system/${{github.sha}}
+          tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
       - name: Test the docker build
         run: |
           docker run --rm -d --name solar-system-app \
@@ -100,4 +100,4 @@ jobs:
         with:
           push: true
           context: .
-          tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system/${{github.sha}}
+          tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
