@@ -15,7 +15,19 @@ env:
 jobs:
   unit-testing:
     name: Unit Testing
+    services:
+      mongodb:
+        image: mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+        ports:
+          - 27017:27017
     runs-on: ubuntu-latest
+    env:
+      MONGO_USERNAME: "root"
+      MONGO_PASSWORD: "example"
+      MONGO_URI: "mongodb://root:example@localhost:27017"
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v6
@@ -41,14 +53,24 @@ jobs:
           path: test-results.xml
   code-coverage:
     name: Code Coverage
+    container:
+      image: node:lts
+    services:
+      mongodb:
+        image: mongo
+        options: >-
+          --name mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+    env:
+      MONGO_USERNAME: "root"
+      MONGO_PASSWORD: "example"
+      MONGO_URI: "mongodb://root:example@mongo:27017"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v6
-      - name: Install nodejs
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24.14.1
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v4
