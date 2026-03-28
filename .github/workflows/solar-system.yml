@@ -158,7 +158,9 @@ jobs:
       - name: Test kubectl command
         run: kubectl version
       - name: Get Ingress IP
-        run: echo "INGRESS_IP=$(kubectl get svc ingress-nginx-nginx-ingress-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')" >> $GITHUB_ENV
+        run: |
+          INGRESS_HOSTNAME=$(kubectl get svc ingress-nginx-nginx-ingress-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "INGRESS_IP=$(nslookup $INGRESS_HOSTNAME | grep 'Address:' | grep -v '#' | tail -1 | awk '{print $2}')" >> $GITHUB_ENV
       - name: Replace placeholders in the kubernetes deployment file
         uses: cschleiden/replace-tokens@v1
         with:
