@@ -147,5 +147,6 @@ jobs:
       - name: Setup kubectl comman
         uses: azure/setup-kubectl@v4
         id: install-kubectl
+
       - name: Test kubectl command
         run: kubectl version
