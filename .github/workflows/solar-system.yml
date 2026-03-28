@@ -154,11 +154,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
-      - name: Test aws setup
-        run: aws configure list
       - name: Setup kubeconfig context
         run: aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name ${{ vars.EKS_CLUSTER_NAME }}
-      - name: Setup kubectl comman
+      - name: Setup kubectl command
         uses: azure/setup-kubectl@v4
         id: install-kubectl
       - name: Test kubectl command
@@ -210,7 +208,7 @@ jobs:
 
   deploy-prod:
     name: Prod Deployment on eks
-    if: github.ref == 'refs/head/main'
+    if: github.ref == 'refs/heads/main'
     needs: build
     outputs:
       app-ingress-url: ${{ steps.app-ingress-url.outputs.APP_INGRESS_URL }}
@@ -229,11 +227,9 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
-      - name: Test aws setup
-        run: aws configure list
       - name: Setup kubeconfig context
         run: aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name ${{ vars.EKS_CLUSTER_NAME }}
-      - name: Setup kubectl comman
+      - name: Setup kubectl command
         uses: azure/setup-kubectl@v4
         id: install-kubectl
       - name: Test kubectl command
