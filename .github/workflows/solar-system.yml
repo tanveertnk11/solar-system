@@ -169,5 +169,5 @@ jobs:
           NAMESPACE: ${{ vars.KUBE_NAMESPACE }}
           INGRESS_IP: ${{ env.INGRESS_IP }}
           K8S_IMAGE: ${{ env.K8S_IMAGE }}
-      - name: Show deployment file
-        run: cat kubernetes/development/deployment.yaml
+      - name: Deploy manifests
+        run: kubectl apply -f kubernetes/development
