@@ -169,5 +169,13 @@ jobs:
           NAMESPACE: ${{ vars.KUBE_NAMESPACE }}
           INGRESS_IP: ${{ env.INGRESS_IP }}
           K8S_IMAGE: ${{ env.K8S_IMAGE }}
-      - name: Deploy manifests
-        run: kubectl apply -f kubernetes/development
+      - uses: azure/k8s-create-secret@v2
+        with:
+          namespace: "dev"
+          secret-type: "generic"
+          secret-name: "mongo-db-creds"
+          data: '{"MONGO_URI":"${{ env.MONGO_URI }}","MONGO_USERNAME":"${{ env.MONGO_USERNAME }}","MONGO_PASSWORD":"${{ env.MONGO_PASSWORD }}"}'
+      - name: Create namespace if it doesn't exist and Deploy manifests
+        run: |
+          kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -                                                                                   
+          kubectl apply -f kubernetes/development
