@@ -92,44 +92,52 @@ jobs:
   #         name: Coverage
   #         path: coverage
   #         retention-days: 5
-  # build:
-  #   name: Docker build and push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Repo
-  #       uses: actions/checkout@v6
-  #     - name: Login to Docker Hub
-  #       uses: docker/login-action@v4
-  #       with:
-  #         username: ${{ vars.DOCKERHUB_USERNAME }}
-  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
-  #     - name: Build the docker image
-  #       uses: docker/build-push-action@v7
-  #       with:
-  #         push: false
-  #         context: .
-  #         load: true
-  #         tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
-  #     - name: Test the docker build
-  #       run: |
-  #         docker run --rm -d --name solar-system-app \
-  #         -p 3000:3000 \
-  #         -e MONGO_USERNAME=${{env.MONGO_USERNAME}} \
-  #         -e MONGO_PASSWORD=${{env.MONGO_PASSWORD}} \
-  #         -e MONGO_URI=${{env.MONGO_URI}} \
-  #         ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
+  build:
+    name: Docker build and push
+    runs-on: ubuntu-latest
+    outputs:
+      k8s-image: ${{ steps.docker-image.outputs.docker-image }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build the docker image
+        uses: docker/build-push-action@v7
+        with:
+          push: false
+          context: .
+          load: true
+          tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
+      - name: Test the docker build
+        run: |
+          docker run --rm -d --name solar-system-app \
+          -p 3000:3000 \
+          -e MONGO_USERNAME=${{env.MONGO_USERNAME}} \
+          -e MONGO_PASSWORD=${{env.MONGO_PASSWORD}} \
+          -e MONGO_URI=${{env.MONGO_URI}} \
+          ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
 
-  #         echo "Testing /live endpoint"
-  #         wget -q -O - http://127.0.0.1:3000/live | grep live
-  #     - name: Push the docker image
-  #       uses: docker/build-push-action@v7
-  #       with:
-  #         push: true
-  #         context: .
-  #         tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
+          echo "Testing /live endpoint"
+          wget -q -O - http://127.0.0.1:3000/live | grep live
+      - name: Push the docker image
+        uses: docker/build-push-action@v7
+        with:
+          push: true
+          context: .
+          tags: ${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}
+      - name: Output docker image
+        id: docker-image
+        run: echo "docker-image=${{vars.DOCKERHUB_USERNAME}}/solar-system:${{github.sha}}" >> "$GITHUB_OUTPUT"
 
   deploy-dev:
     name: Dev Deployment on eks
+    needs: build
+    env:
+      K8S_IMAGE: ${{ needs.build.outputs.k8s-image }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -149,3 +157,17 @@ jobs:
         id: install-kubectl
       - name: Test kubectl command
         run: kubectl version
+      - name: Get Ingress IP
+        run: echo "INGRESS_IP=$(kubectl get svc ingress-nginx-nginx-ingress-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')" >> $GITHUB_ENV
+      - name: Replace placeholders in the kubernetes deployment file
+        uses: cschleiden/replace-tokens@v1
+        with:
+          tokenPrefix: "${"
+          tokenSuffix: "}"
+          files: '["./kubernetes/development/*.yaml"]'
+        env:
+          NAMESPACE: ${{ vars.KUBE_NAMESPACE }}
+          INGRESS_IP: ${{ env.INGRESS_IP }}
+          K8S_IMAGE: ${{ env.K8S_IMAGE }}
+      - name: Show deployment file
+        run: cat kubernetes/deployment.yaml
