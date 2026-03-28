@@ -141,7 +141,7 @@ jobs:
     env:
       K8S_IMAGE: ${{ needs.build.outputs.k8s-image }}
     environment:
-      name: dev
+      name: development
       url: http://${{ steps.app-ingress-url.outputs.APP_INGRESS_URL }}
     runs-on: ubuntu-latest
     steps:
