@@ -169,15 +169,15 @@ jobs:
           NAMESPACE: ${{ vars.KUBE_NAMESPACE }}
           INGRESS_IP: ${{ env.INGRESS_IP }}
           K8S_IMAGE: ${{ env.K8S_IMAGE }}
+      - name: Create namespace if it doesn't exist
+        run: kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
       - name: Create mongo-db-creds secret
         run: |
           kubectl create secret generic mongo-db-creds \
-            --namespace=dev \                                                                                                                                        
-            --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
-            --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \                                                                                                
-            --from-literal=MONGO_PASSWORD=${{ env.MONGO_PASSWORD }} \
-            --dry-run=client -o yaml | kubectl apply -f -
-      - name: Create namespace if it doesn't exist and Deploy manifests
-        run: |
-          kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -                                                                                   
-          kubectl apply -f kubernetes/development
+          --namespace=dev \                                                                                                                                        
+          --from-literal=MONGO_URI="${{ env.MONGO_URI }}" \
+          --from-literal=MONGO_USERNAME="${{ env.MONGO_USERNAME }}" \                                                                                              
+          --from-literal=MONGO_PASSWORD="${{ env.MONGO_PASSWORD }}" \
+          --dry-run=client -o yaml | kubectl apply -f -
+      - name: Deploy manifests
+        run: kubectl apply -f kubernetes/development
