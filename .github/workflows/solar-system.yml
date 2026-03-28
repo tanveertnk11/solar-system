@@ -136,6 +136,8 @@ jobs:
   deploy-dev:
     name: Dev Deployment on eks
     needs: build
+    outputs:
+      app-ingress-url: ${{ steps.app-ingress-url.outputs.APP_INGRESS_URL }}
     env:
       K8S_IMAGE: ${{ needs.build.outputs.k8s-image }}
     runs-on: ubuntu-latest
@@ -184,3 +186,18 @@ jobs:
             -o yaml | kubectl apply -f -
       - name: Deploy manifests
         run: kubectl apply -f kubernetes/development
+      - name: Setup App Ingress Host Url
+        id: app-ingress-url
+        run: |
+          echo "APP_INGRESS_URL=$(kubectl get ingress solar-system -n dev -o jsonpath='{.spec.tls[0].hosts[0]}')" >> "$GITHUB_OUTPUT"
+  integration-testing:
+    name: Integration Testing
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    env:
+      APP_INGRESS_URL: ${{ needs.deploy-dev.outputs.app-ingress-url }}
+    steps:
+      - name: Test APP url
+        run: |
+          echo "Testing url: ${{ env.APP_INGRESS_URL }}"
+          curl https://${{ env.APP_INGRESS_URL }}/live -s -k | jq -r .status | grep -iq live
