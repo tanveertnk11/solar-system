@@ -170,4 +170,4 @@ jobs:
           INGRESS_IP: ${{ env.INGRESS_IP }}
           K8S_IMAGE: ${{ env.K8S_IMAGE }}
       - name: Show deployment file
-        run: cat kubernetes/deployment.yaml
+        run: cat kubernetes/development/deployment.yaml
