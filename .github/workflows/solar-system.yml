@@ -169,12 +169,14 @@ jobs:
           NAMESPACE: ${{ vars.KUBE_NAMESPACE }}
           INGRESS_IP: ${{ env.INGRESS_IP }}
           K8S_IMAGE: ${{ env.K8S_IMAGE }}
-      - uses: azure/k8s-create-secret@v2
-        with:
-          namespace: "dev"
-          secret-type: "generic"
-          secret-name: "mongo-db-creds"
-          data: '{"MONGO_URI":"${{ env.MONGO_URI }}","MONGO_USERNAME":"${{ env.MONGO_USERNAME }}","MONGO_PASSWORD":"${{ env.MONGO_PASSWORD }}"}'
+      - name: Create mongo-db-creds secret
+        run: |
+          kubectl create secret generic mongo-db-creds \
+            --namespace=dev \                                                                                                                                        
+            --from-literal=MONGO_URI=${{ env.MONGO_URI }} \
+            --from-literal=MONGO_USERNAME=${{ env.MONGO_USERNAME }} \                                                                                                
+            --from-literal=MONGO_PASSWORD=${{ env.MONGO_PASSWORD }} \
+            --dry-run=client -o yaml | kubectl apply -f -
       - name: Create namespace if it doesn't exist and Deploy manifests
         run: |
           kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -                                                                                   
