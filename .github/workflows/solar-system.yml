@@ -189,7 +189,8 @@ jobs:
       - name: Setup App Ingress Host Url
         id: app-ingress-url
         run: |
-          echo "APP_INGRESS_URL=$(kubectl get ingress solar-system -n dev -o jsonpath='{.spec.tls[0].hosts[0]}')" >> "$GITHUB_OUTPUT"
+          INGRESS_URL=$(kubectl get ingress solar-system -n dev -o jsonpath='{.spec.tls[0].hosts[0]}')
+          echo "APP_INGRESS_URL=$INGRESS_URL.sslip.io" >> "$GITHUB_OUTPUT"
   integration-testing:
     name: Integration Testing
     runs-on: ubuntu-latest
@@ -200,4 +201,4 @@ jobs:
       - name: Test APP url
         run: |
           echo "Testing url: ${{ env.APP_INGRESS_URL }}"
-          curl https://${{ env.APP_INGRESS_URL }}/live -s -k | jq -r .status | grep -iq live
+          curl http://${{ env.APP_INGRESS_URL }}/live -s -k | jq -r .status | grep -iq live
