@@ -53,7 +53,7 @@ jobs:
         with:
           bucket-name: tany-demo-bucket
           file: test-results.xml
-          aws-region: ${{ vars.vars.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
       - name: Artifact the Test Results
         uses: actions/upload-artifact@v6
         with:
@@ -92,11 +92,13 @@ jobs:
       - name: Run Code Coverage
         continue-on-error: true
         run: npm run coverage
+      - name: Zip coverage directory
+        run: zip -r coverage.zip coverage/
       - name: Upload artifacts to AWS S3
         uses: usualdesigner/s3-artifact-upload@main
         with:
           bucket-name: tany-demo-bucket
-          file: coverage
+          file: coverage.zip
           aws-region: ${{ vars.AWS_REGION }}
       - name: Artifact the code coverage directory
         uses: actions/upload-artifact@v6
@@ -191,3 +193,18 @@ jobs:
     with:
       app-ingress-url: ${{ needs.deploy-prod.outputs.app-ingress-url }}
       environment: production
+  slack-notification:
+    name: Slack Notification
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: github-actions-notifications
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_ICON: https://gitlab.com/tanveertnk11/solar-system/-/raw/main/images/saturn.png
+          SLACK_MESSAGE: ":hammer_and_wrench: Triggered by ${{ github.actor }}"
+          SLACK_TITLE: "Pipeline Status"
