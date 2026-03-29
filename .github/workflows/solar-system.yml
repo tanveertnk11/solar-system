@@ -140,13 +140,13 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-workflow.yml
     with:
       k8s-image: ${{ needs.build.outputs.k8s-image }}
-      mongo-uri: ${{ env.MONGO_URI }}
-      mongo-username: ${{ env.MONGO_USERNAME }}
+      mongo-uri: ${{ vars.MONGO_URI }}
+      mongo-username: ${{ vars.MONGO_USERNAME }}
       environment: development
     secrets:
       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
       aws-access-secret-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      mongo-password: ${{ env.MONGO_PASSWORD }}
+      mongo-password: ${{ secrets.MONGO_PASSWORD }}
 
   dev-integration-testing:
     name: Development Integration Testing
@@ -164,12 +164,12 @@ jobs:
     with:
       environment: production
       k8s-image: ${{ needs.build.outputs.k8s-image }}
-      mongo-uri: ${{ env.MONGO_URI }}
-      mongo-username: ${{ env.MONGO_USERNAME }}
+      mongo-uri: ${{ vars.MONGO_URI }}
+      mongo-username: ${{ vars.MONGO_USERNAME }}
     secrets:
       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
       aws-access-secret-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      mongo-password: ${{ env.MONGO_PASSWORD }}
+      mongo-password: ${{ secrets.MONGO_PASSWORD }}
 
   prod-integration-testing:
     name: Development Integration Testing
