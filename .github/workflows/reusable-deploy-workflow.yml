@@ -75,10 +75,10 @@ jobs:
           K8S_IMAGE: ${{ inputs.k8s-image }}
           REPLICAS: ${{ vars.REPLICAS }}
       - name: Create namespace if it doesn't exist
-        run: kubectl create namespace ${{ inputs.k8s-image }} --dry-run=client -o yaml | kubectl apply -f -
+        run: kubectl create namespace ${{ vars.KUBE_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
       - name: Create mongo-db-creds secret
         run: |
-          kubectl -n ${{ inputs.k8s-image }} create secret generic mongo-db-creds \
+          kubectl -n ${{ vars.KUBE_NAMESPACE }} create secret generic mongo-db-creds \
             --from-literal=MONGO_URI=${{ inputs.mongo-uri }} \
             --from-literal=MONGO_USERNAME=${{ inputs.mongo-username }} \
             --from-literal=MONGO_PASSWORD=${{ secrets.mongo-password }} \
