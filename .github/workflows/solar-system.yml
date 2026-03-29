@@ -53,6 +53,7 @@ jobs:
         with:
           bucket-name: tany-demo-bucket
           file: test-results.xml
+          aws-region: ${{ vars.vars.AWS_REGION }}
       - name: Artifact the Test Results
         uses: actions/upload-artifact@v6
         with:
@@ -96,6 +97,7 @@ jobs:
         with:
           bucket-name: tany-demo-bucket
           file: coverage
+          aws-region: ${{ vars.AWS_REGION }}
       - name: Artifact the code coverage directory
         uses: actions/upload-artifact@v6
         with:
