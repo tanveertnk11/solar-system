@@ -13,87 +13,123 @@ env:
   MONGO_URI: ${{ vars.MONGO_URI }}
 
 jobs:
-  # unit-testing:
-  #   name: Unit Testing
-  #   services:
-  #     mongodb:
-  #       image: mongo
-  #       env:
-  #         MONGO_INITDB_ROOT_USERNAME: root
-  #         MONGO_INITDB_ROOT_PASSWORD: example
-  #       ports:
-  #         - 27017:27017
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     MONGO_USERNAME: "root"
-  #     MONGO_PASSWORD: "example"
-  #     MONGO_URI: "mongodb://root:example@localhost:27017"
-  #   steps:
-  #     - name: Checkout Repo
-  #       uses: actions/checkout@v6
-  #     - name: Install nodejs
-  #       uses: actions/setup-node@v6
-  #       with:
-  #         node-version: 24.14.1
-  #     - name: Cache node modules
-  #       id: cache-npm
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: node_modules
-  #         key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
-  #     - name: Install dependencies
-  #       run: npm install
-  #     - name: Initialise seed data
-  #       run: node seed.js
-  #     - name: Run unit tests
-  #       if: always()
-  #       run: npm test
-  #     - name: Artifact the Test Results
-  #       uses: actions/upload-artifact@v6
-  #       with:
-  #         name: Test results
-  #         path: test-results.xml
-  # code-coverage:
-  #   name: Code Coverage
-  #   container:
-  #     image: node:lts
-  #   services:
-  #     mongodb:
-  #       image: mongo
-  #       options: >-
-  #         --name mongo
-  #       env:
-  #         MONGO_INITDB_ROOT_USERNAME: root
-  #         MONGO_INITDB_ROOT_PASSWORD: example
-  #   env:
-  #     MONGO_USERNAME: "root"
-  #     MONGO_PASSWORD: "example"
-  #     MONGO_URI: "mongodb://root:example@mongo:27017"
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Repo
-  #       uses: actions/checkout@v6
-  #     - name: Cache node modules
-  #       id: cache-npm
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: node_modules
-  #         key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
-  #     - name: Install dependencies
-  #       run: npm install
-  #     - name: Initialise seed data
-  #       run: node seed.js
-  #     - name: Run Code Coverage
-  #       continue-on-error: true
-  #       run: npm run coverage
-  #     - name: Artifact the code coverage directory
-  #       uses: actions/upload-artifact@v6
-  #       with:
-  #         name: Coverage
-  #         path: coverage
-  #         retention-days: 5
+  unit-testing:
+    name: Unit Testing
+    services:
+      mongodb:
+        image: mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+        ports:
+          - 27017:27017
+    runs-on: ubuntu-latest
+    env:
+      MONGO_USERNAME: "root"
+      MONGO_PASSWORD: "example"
+      MONGO_URI: "mongodb://root:example@localhost:27017"
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+      - name: Install nodejs
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: npm install
+      - name: Initialise seed data
+        run: node seed.js
+      - name: Run unit tests
+        if: always()
+        run: npm test
+      - name: Artifact the Test Results
+        uses: actions/upload-artifact@v6
+        with:
+          name: Test results
+          path: test-results.xml
+  code-coverage:
+    name: Code Coverage
+    container:
+      image: node:lts
+    services:
+      mongodb:
+        image: mongo
+        options: >-
+          --name mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+    env:
+      MONGO_USERNAME: "root"
+      MONGO_PASSWORD: "example"
+      MONGO_URI: "mongodb://root:example@mongo:27017"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: npm install
+      - name: Initialise seed data
+        run: node seed.js
+      - name: Run Code Coverage
+        continue-on-error: true
+        run: npm run coverage
+      - name: Artifact the code coverage directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: cobertura-coverage
+          path: coverage/cobertura-coverage.xml
+          retention-days: 5
+  reports-s3:
+    needs: [code-coverage, unit-testing]
+    name: AWS S3 - Upload Reports
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Download Mocha Test Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: Test results
+
+      - name: Download Code Coverage Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: cobertura-coverage
+
+      - name: Merge Test Files
+        run: |
+          ls -ltr
+          mkdir reports-${{ github.sha }}
+          mv cobertura-coverage.xml reports-${{ github.sha }}/
+          mv test-results.xml reports-${{ github.sha }}/
+          ls -ltr reports-${{ github.sha }}/
+
+      - name: Upload to AWS S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          SOURCE_DIR: reports-${{ github.sha }}
+          DEST_DIR: reports-${{ github.sha }}
   build:
     name: Docker build and push
+    needs: [unit-testing, code-coverage]
     runs-on: ubuntu-latest
     outputs:
       k8s-image: ${{ steps.docker-image.outputs.docker-image }}
@@ -178,3 +214,19 @@ jobs:
     with:
       app-ingress-url: ${{ needs.deploy-prod.outputs.app-ingress-url }}
       environment: production
+  slack-notification:
+    name: Slack Notification
+    needs: [dev-integration-testing, prod-integration-testing]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: github-actions-notifications
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_ICON: https://gitlab.com/tanveertnk11/solar-system/-/raw/main/images/saturn.png
+          SLACK_MESSAGE: ":hammer_and_wrench: Triggered by ${{ github.actor }}"
+          SLACK_TITLE: "Pipeline Status"
