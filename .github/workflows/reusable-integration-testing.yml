@@ -1,0 +1,24 @@
+name: Reusable Integration Testing
+on:
+  workflow_call:
+    inputs:
+      app-ingress-url:
+        description: APP INGRESS URL
+        type: string
+        required: true
+      environment:
+        description: Testing Environment
+        type: string
+        required: true
+
+jobs:
+  reusable-integration-testing:
+    name: ${{ inputs.environment }} Integration Testing
+    runs-on: ubuntu-latest
+    env:
+      APP_INGRESS_URL: ${{ inputs.app-ingress-url }}
+    steps:
+      - name: Test APP url
+        run: |
+          echo "Testing ${{ inputs.environment }} url: ${{ inputs.app-ingress-url }}"
+          curl http://${{ inputs.app-ingress-url }}/live -s -k | jq -r .status | grep -iq live
