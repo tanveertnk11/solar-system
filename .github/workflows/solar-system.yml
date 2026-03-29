@@ -145,7 +145,7 @@ jobs:
       environment: development
     secrets:
       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws-access-secret-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-access-secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       mongo-password: ${{ secrets.MONGO_PASSWORD }}
 
   dev-integration-testing:
@@ -168,7 +168,7 @@ jobs:
       mongo-username: ${{ vars.MONGO_USERNAME }}
     secrets:
       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws-access-secret-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-access-secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       mongo-password: ${{ secrets.MONGO_PASSWORD }}
 
   prod-integration-testing:
