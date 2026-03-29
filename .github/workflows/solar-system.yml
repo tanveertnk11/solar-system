@@ -99,12 +99,12 @@ jobs:
     continue-on-error: true
     steps:
       - name: Download Mocha Test Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: Test results
 
       - name: Download Code Coverage Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: cobertura-coverage
 
@@ -216,6 +216,7 @@ jobs:
       environment: production
   slack-notification:
     name: Slack Notification
+    needs: [dev-integration-testing, prod-integration-testing]
     runs-on: ubuntu-latest
     if: always()
     steps:
