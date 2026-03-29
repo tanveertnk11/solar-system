@@ -48,12 +48,6 @@ jobs:
       - name: Run unit tests
         if: always()
         run: npm test
-      - name: Upload artifacts to AWS S3
-        uses: usualdesigner/s3-artifact-upload@main
-        with:
-          bucket-name: tany-demo-bucket
-          file: test-results.xml
-          aws-region: ${{ vars.AWS_REGION }}
       - name: Artifact the Test Results
         uses: actions/upload-artifact@v6
         with:
@@ -92,20 +86,47 @@ jobs:
       - name: Run Code Coverage
         continue-on-error: true
         run: npm run coverage
-      - name: Zip coverage directory
-        run: zip -r coverage.zip coverage/
-      - name: Upload artifacts to AWS S3
-        uses: usualdesigner/s3-artifact-upload@main
-        with:
-          bucket-name: tany-demo-bucket
-          file: coverage.zip
-          aws-region: ${{ vars.AWS_REGION }}
       - name: Artifact the code coverage directory
         uses: actions/upload-artifact@v6
         with:
-          name: Coverage
-          path: coverage
+          name: cobertura-coverage
+          path: coverage/cobertura-coverage.xml
           retention-days: 5
+  reports-s3:
+    needs: [code-coverage, unit-testing]
+    name: AWS S3 - Upload Reports
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Download Mocha Test Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: Test results
+
+      - name: Download Code Coverage Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: cobertura-coverage
+
+      - name: Merge Test Files
+        run: |
+          ls -ltr
+          mkdir reports-${{ github.sha }}
+          mv cobertura-coverage.xml reports-${{ github.sha }}/
+          mv test-results.xml reports-${{ github.sha }}/
+          ls -ltr reports-${{ github.sha }}/
+
+      - name: Upload to AWS S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          SOURCE_DIR: reports-${{ github.sha }}
+          DEST_DIR: reports-${{ github.sha }}
   build:
     name: Docker build and push
     needs: [unit-testing, code-coverage]
