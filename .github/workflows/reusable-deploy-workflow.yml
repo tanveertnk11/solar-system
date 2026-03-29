@@ -1,0 +1,94 @@
+name: Reusable Deployment Workflow
+on:
+  workflow_call:
+    inputs:
+      k8s-image:
+        description: Application docker image
+        required: true
+        type: string
+      mongo-uri:
+        description: Mongodb URI
+        required: true
+        type: string
+      mongo-username:
+        description: Mongodb username
+        required: true
+        type: string
+      environment:
+        description: Github Environment
+        required: true
+        type: string
+    secrets:
+      aws-access-key-id:
+        description: AWS Access Key Id
+        required: true
+      aws-access-secret-key:
+        description: AWS access secret key
+        required: true
+      mongo-password:
+        description: Mongodb password
+        required: true
+    outputs:
+      app-ingress-url:
+        description: Application Ingress URL
+        value: ${{ jobs.reuse-deploy.outputs.app-ingress-url }}
+jobs:
+  reuse-deploy:
+    name: "${{ inputs.environment }}  Deployment on eks"
+    outputs:
+      app-ingress-url: ${{ steps.app-ingress-url.outputs.APP_INGRESS_URL }}
+    env:
+      K8S_IMAGE: ${{ inputs.k8s-image }}
+    environment:
+      name: ${{ inputs.environment }}
+      url: http://${{ steps.app-ingress-url.outputs.APP_INGRESS_URL }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v6
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.aws-access-key-id }}
+          aws-secret-access-key: ${{ secrets.aws-access-secret-key }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Setup kubeconfig context
+        run: aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name ${{ vars.EKS_CLUSTER_NAME }}
+      - name: Setup kubectl command
+        uses: azure/setup-kubectl@v4
+        id: install-kubectl
+      - name: Test kubectl command
+        run: kubectl version
+      - name: Get Ingress IP
+        run: |
+          INGRESS_HOSTNAME=$(kubectl get svc ingress-nginx-nginx-ingress-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "INGRESS_IP=$(nslookup $INGRESS_HOSTNAME | grep 'Address:' | grep -v '#' | tail -1 | awk '{print $2}')" >> $GITHUB_ENV
+      - name: Replace placeholders in the kubernetes deployment file
+        uses: cschleiden/replace-tokens@v1
+        with:
+          tokenPrefix: "${"
+          tokenSuffix: "}"
+          files: '["./kubernetes/${{ inputs.environment }}/*.yaml"]'
+        env:
+          NAMESPACE: ${{ vars.KUBE_NAMESPACE }}
+          INGRESS_IP: ${{ env.INGRESS_IP }}
+          K8S_IMAGE: ${{ inputs.k8s-image }}
+          REPLICAS: ${{ vars.REPLICAS }}
+      - name: Create namespace if it doesn't exist
+        run: kubectl create namespace ${{ vars.KUBE_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create mongo-db-creds secret
+        run: |
+          kubectl -n ${{ vars.KUBE_NAMESPACE }} create secret generic mongo-db-creds \
+            --from-literal=MONGO_URI=${{ inputs.mongo-uri }} \
+            --from-literal=MONGO_USERNAME=${{ inputs.mongo-username }} \
+            --from-literal=MONGO_PASSWORD=${{ secrets.mongo-password }} \
+            --save-config \
+            --dry-run=client \
+            -o yaml | kubectl apply -f -
+      - name: Deploy manifests
+        run: kubectl apply -f kubernetes/${{ inputs.environment }}
+      - name: Setup App Ingress Host Url
+        id: app-ingress-url
+        run: |
+          INGRESS_URL=$(kubectl get ingress solar-system -n ${{ vars.KUBE_NAMESPACE }} -o jsonpath='{.spec.tls[0].hosts[0]}')
+          echo "APP_INGRESS_URL=$INGRESS_URL.sslip.io" >> "$GITHUB_OUTPUT"
