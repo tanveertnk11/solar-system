@@ -20,5 +20,5 @@ spec:
           pathType: Prefix
     tls:
     - hosts:
-      - solar-system-${NAMESPACE}.${INGRESS_IP}.sslip.io
+      - solar-system-${NAMESPACE}.${INGRESS_IP}
       secretName: ingress-local-tls
